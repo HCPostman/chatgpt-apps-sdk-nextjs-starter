@@ -103,13 +103,26 @@ Last Updated: ${new Date(task.updated_at).toLocaleDateString()}`,
           }
         };
 
-      // Return as required JSON-encoded string in text content
-      return {
-        content: [{
-          type: "text",
-          text: JSON.stringify(document)
-        }]
-      };
+        // Return as required JSON-encoded string in text content
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(document)
+          }]
+        };
+      } catch (error) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              id: args.id,
+              title: "Error",
+              text: "Failed to fetch task details.",
+              metadata: { error: "fetch_failed" }
+            })
+          }]
+        };
+      }
     }
   );
 
