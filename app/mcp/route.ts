@@ -15,30 +15,39 @@ const handler = createMcpHandler(async (server) => {
       }
     },
     async (args) => {
-      // Search through tasks based on the query
-      const allTasks = await getTasks({ status: "all", limit: 100 });
-      const query = args.query.toLowerCase();
+      try {
+        // Search through tasks based on the query
+        const allTasks = await getTasks({ status: "all", limit: 50 });
+        const query = args.query.toLowerCase();
 
-      const matchingTasks = allTasks.filter(task =>
-        task.title.toLowerCase().includes(query) ||
-        task.description?.toLowerCase().includes(query) ||
-        task.tags?.some(tag => tag.toLowerCase().includes(query))
-      );
+        const matchingTasks = allTasks.filter(task =>
+          task.title.toLowerCase().includes(query) ||
+          task.description?.toLowerCase().includes(query) ||
+          task.tags?.some(tag => tag.toLowerCase().includes(query))
+        );
 
-      // Format results according to ChatGPT requirements
-      const results = matchingTasks.map(task => ({
-        id: task.id,
-        title: task.title,
-        url: `https://chatgpt-apps-sdk-nextjs-starter-28gmw2j94-boggild-tech.vercel.app/widgets/task-details?id=${task.id}`
-      }));
+        // Format results according to ChatGPT requirements
+        const results = matchingTasks.map(task => ({
+          id: task.id,
+          title: task.title,
+          url: `https://chatgpt-apps-sdk-nextjs-starter-alpha.vercel.app/widgets/task-details?id=${task.id}`
+        }));
 
-      // Return as required JSON-encoded string in text content
-      return {
-        content: [{
-          type: "text",
-          text: JSON.stringify({ results })
-        }]
-      };
+        // Return as required JSON-encoded string in text content
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({ results })
+          }]
+        };
+      } catch (error) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({ results: [], error: "Search failed" })
+          }]
+        };
+      }
     }
   );
 
@@ -54,29 +63,30 @@ const handler = createMcpHandler(async (server) => {
       }
     },
     async (args) => {
-      const allTasks = await getTasks({ status: "all", limit: 100 });
-      const task = allTasks.find(t => t.id === args.id);
+      try {
+        const allTasks = await getTasks({ status: "all", limit: 50 });
+        const task = allTasks.find(t => t.id === args.id);
 
-      if (!task) {
-        return {
-          content: [{
-            type: "text",
-            text: JSON.stringify({
-              id: args.id,
-              title: "Task not found",
-              text: "The requested task could not be found.",
-              url: `https://chatgpt-apps-sdk-nextjs-starter-28gmw2j94-boggild-tech.vercel.app/widgets/task-details?id=${args.id}`,
-              metadata: { error: "not_found" }
-            })
-          }]
-        };
-      }
+        if (!task) {
+          return {
+            content: [{
+              type: "text",
+              text: JSON.stringify({
+                id: args.id,
+                title: "Task not found",
+                text: "The requested task could not be found.",
+                url: `https://chatgpt-apps-sdk-nextjs-starter-alpha.vercel.app/widgets/task-details?id=${args.id}`,
+                metadata: { error: "not_found" }
+              })
+            }]
+          };
+        }
 
-      // Format as required by ChatGPT
-      const document = {
-        id: task.id,
-        title: task.title,
-        text: `Task: ${task.title}
+        // Format as required by ChatGPT
+        const document = {
+          id: task.id,
+          title: task.title,
+          text: `Task: ${task.title}
 Description: ${task.description || 'No description'}
 Status: ${task.status}
 Priority: ${task.priority}
@@ -84,14 +94,14 @@ Due Date: ${task.due_date || 'No due date'}
 Tags: ${task.tags?.join(', ') || 'No tags'}
 Created: ${new Date(task.created_at).toLocaleDateString()}
 Last Updated: ${new Date(task.updated_at).toLocaleDateString()}`,
-        url: `https://chatgpt-apps-sdk-nextjs-starter-28gmw2j94-boggild-tech.vercel.app/widgets/task-details?id=${task.id}`,
-        metadata: {
-          status: task.status,
-          priority: task.priority,
-          tags: task.tags,
-          source: "task_management_system"
-        }
-      };
+          url: `https://chatgpt-apps-sdk-nextjs-starter-alpha.vercel.app/widgets/task-details?id=${task.id}`,
+          metadata: {
+            status: task.status,
+            priority: task.priority,
+            tags: task.tags,
+            source: "task_management_system"
+          }
+        };
 
       // Return as required JSON-encoded string in text content
       return {
