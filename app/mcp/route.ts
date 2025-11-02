@@ -218,5 +218,6 @@ Last Updated: ${new Date(task.updated_at).toLocaleDateString()}`,
   );
 });
 
+// Force redeploy: 2025-11-01
 export const GET = handler;
 export const POST = handler;
