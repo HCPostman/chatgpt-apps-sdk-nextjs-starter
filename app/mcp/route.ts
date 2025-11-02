@@ -3,6 +3,62 @@ import { z } from "zod";
 import { getTasks, createTask, updateTask, deleteTask, getTaskStats, getProductivityData } from "@/lib/task-manager";
 
 const handler = createMcpHandler(async (server) => {
+  // Search through tasks
+  server.registerTool(
+    "search_tasks",
+    {
+      title: "Search Tasks",
+      description: "Search through tasks by title, description, or tags",
+      inputSchema: {
+        query: z.string().describe("Search query for tasks"),
+        status: z.enum(["all", "pending", "in_progress", "completed"]).default("all").describe("Filter by task status")
+      }
+    },
+    async (args) => {
+      try {
+        const allTasks = await getTasks({ status: args.status === "all" ? "all" : args.status, limit: 50 });
+        const query = args.query.toLowerCase();
+
+        const matchingTasks = allTasks.filter(task =>
+          task.title.toLowerCase().includes(query) ||
+          task.description?.toLowerCase().includes(query) ||
+          task.tags?.some(tag => tag.toLowerCase().includes(query))
+        );
+
+        if (matchingTasks.length === 0) {
+          return {
+            content: [{
+              type: "text",
+              text: `No tasks found matching "${args.query}"`
+            }]
+          };
+        }
+
+        const taskList = matchingTasks.map(task =>
+          `• **${task.title}** (${task.status}, ${task.priority} priority)
+  ${task.description || 'No description'}
+  Tags: ${task.tags?.join(', ') || 'None'}
+  Due: ${task.due_date ? new Date(task.due_date).toLocaleDateString() : 'No due date'}
+  ID: ${task.id}`
+        ).join('\n\n');
+
+        return {
+          content: [{
+            type: "text",
+            text: `Found ${matchingTasks.length} task(s) matching "${args.query}":\n\n${taskList}`
+          }]
+        };
+      } catch (error) {
+        return {
+          content: [{
+            type: "text",
+            text: "Error searching tasks"
+          }]
+        };
+      }
+    }
+  );
+
   // Task management tools for Developer Mode
   server.registerTool(
     "list_tasks",
